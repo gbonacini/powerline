@@ -22,40 +22,42 @@
 #include<string>
 #include<cstdio>
 
+namespace powerline {
+  
 class FrequencyMeter {
     public:
         // Default pin -> D3
         FrequencyMeter(std::string _ssid, std::string _pwd, int _pin=0, int _port=80);
-        void init(void)                noexcept;
-        void measure(int samples=50)   noexcept;
-        void response(void)            noexcept;
+        void init(void)                                    noexcept;
+        void measure(int samples=50)                       noexcept;
+        void response(void)                                noexcept;
         
     private:
         std::string ssid,
                     password,
                     request;                 
         int acPin, 
-            pHigh = 0,
-            pLow  = 0;
+            pHigh{0},
+            pLow{0};
 
-        size_t  sampleCounter = 0;
+        size_t  sampleCounter{0};
             
-        float pTime = 0.0F,
-              freq =  0.0F;
+        float pTime{0.0F},
+              freq{0.0F};
 
         WiFiServer server;
 
         std::map<int, int>  harmonics;
 
-        void connect(void)         noexcept;
-        void startService(void)    noexcept;
-        void reset(void)           noexcept;
-        void fillFreq(char* buff, std::string& data)        noexcept;
-        void fillAnomalies(char* buff, std::string& data)   noexcept;
+        void connect(void)                                 const noexcept;
+        void startService(void)                                  noexcept;
+        void reset(void)                                         noexcept;
+        void fillFreq(char* buff, std::string& data)       const noexcept;
+        void fillAnomalies(char* buff, std::string& data)  const noexcept;
 };
 
 FrequencyMeter::FrequencyMeter(std::string _ssid, std::string _pwd, int _pin, int _port) 
-   : ssid(_ssid), password(_pwd), server(_port)
+   : ssid(_ssid), password(_pwd), acPin(_pin), server(_port)
 {
     Serial.begin(115200);
     pinMode(acPin, INPUT);
@@ -71,7 +73,7 @@ void FrequencyMeter::reset(void) noexcept{
     harmonics.clear();
 }
 
-void FrequencyMeter::connect(void) noexcept{
+void FrequencyMeter::connect(void) const noexcept{
   Serial.print("\n\nConnecting to: ");
   Serial.println(ssid.c_str()); 
   WiFi.begin(ssid.c_str(), password.c_str());
@@ -90,9 +92,9 @@ void FrequencyMeter::startService(void) noexcept{
 }
 
 void FrequencyMeter::measure(int samples) noexcept{
-  float freqSum    = 0.0F,
-        cSample    = 0.0F;
-  int   nHarmonics = 0;
+  float freqSum{0.0F},
+        cSample{0.0F};
+  int   nHarmonics{0};
 
   reset();
   
@@ -114,20 +116,20 @@ void FrequencyMeter::measure(int samples) noexcept{
   freq = freqSum / sampleCounter;
 }
 
-void FrequencyMeter::fillFreq(char* buff, std::string& data)        noexcept{
+void FrequencyMeter::fillFreq(char* buff, std::string& data) const noexcept{
         if(sampleCounter >= 1){
             // TODO: use to_string() or stringstream when available
             data.append("Frequency(Hz):");
             sprintf(buff, "%f", freq);
             data.append(buff).append(":");
-            sprintf(buff, "%lu", sampleCounter);
+            sprintf(buff, "%u", sampleCounter);
             data.append(buff).append(":");
         }else{
             data.append("Empty");
         }
 }
 
-void FrequencyMeter::fillAnomalies(char* buff, std::string& data)   noexcept{
+void FrequencyMeter::fillAnomalies(char* buff, std::string& data) const noexcept{
         if(harmonics.size() >= 1){
             // TODO: use to_string() or stringstream when available
             data.append("Anomalies:");
@@ -171,7 +173,7 @@ void FrequencyMeter::response(void) noexcept{
         data.append("Invalid Request.");
   }
 
-  sprintf(buff, "%lu", data.size());
+  sprintf(buff, "%d", data.size());
   std::string nFreq(buff);
   response.append(nFreq.c_str()).append("\nConnection: close\nContent-Type: text/plain\n\n")
           .append(data.c_str()).append("\n");
@@ -186,3 +188,5 @@ void FrequencyMeter::response(void) noexcept{
   delay(1);
   Serial.print("Client disonnected.\n");
 }
+
+} // End Namespace

@@ -17,6 +17,8 @@
 
 #include "powerline.h"
 
+using  powerline::FrequencyMeter;
+
 FrequencyMeter *fm = nullptr;
 
 void setup() {
